@@ -9,3 +9,8 @@
     ('100', 'TEAM', '{"id": 100, "name": "First Expired Team"}', '1000-12-12 22:22:22');
 insert into configurations (team_id, hourly_deadline, timezone) values
     (2, '22:00', 'Europe/Warsaw');
+insert into reports (user_id, target_day, team_id, last_time, today, problem) values
+    ('uid-100', '2030-01-01', 1, 'Last time', 'Today', 'Problem'),
+    ('uid-100', current_date(), 2, 'Last time', 'Today', 'Problem'),
+    ('uid-100', current_date(), 3, 'Last time', 'Today', 'Problem'),
+    ('uid-100', current_date(), 4, 'Last time', 'Today', 'Problem');

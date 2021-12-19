@@ -15,6 +15,7 @@ import pl.kj.bachelors.daily.domain.service.TeamProvider;
 import pl.kj.bachelors.daily.domain.service.user.MemberProvider;
 import pl.kj.bachelors.daily.infrastructure.repository.TeamConfigRepository;
 import pl.kj.bachelors.daily.integration.BaseIntegrationTest;
+import pl.kj.bachelors.daily.model.PatchOperation;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -23,6 +24,7 @@ import java.util.Optional;
 import java.util.TimeZone;
 
 import static org.mockito.BDDMockito.given;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -108,6 +110,49 @@ public class ReportApiControllerTests extends BaseIntegrationTest {
                         .header(HttpHeaders.AUTHORIZATION, auth)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(this.serialize(model))
+        ).andExpect(status().isForbidden());
+    }
+
+    @Test
+    public void testPatch_NoContent() throws Exception {
+        String auth = String.format("%s %s", this.jwtConfig.getType(), this.generateValidAccessToken("uid-100"));
+        String requestBody = this.serialize(new PatchOperation[] {
+                new PatchOperation("replace", "/today", "Edited")
+        });
+
+        this.mockMvc.perform(
+                patch("/v1/reports/3")
+                        .header(HttpHeaders.AUTHORIZATION, auth)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody)
+        ).andExpect(status().isNoContent());
+    }
+
+    @Test
+    public void testPatch_Unauthorized() throws Exception {
+        String requestBody = this.serialize(new PatchOperation[] {
+                new PatchOperation("replace", "/today", "Edited")
+        });
+
+        this.mockMvc.perform(
+                patch("/v1/reports/3")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody)
+        ).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    public void testPatch_Forbidden() throws Exception {
+        String auth = String.format("%s %s", this.jwtConfig.getType(), this.generateValidAccessToken("uid-100"));
+        String requestBody = this.serialize(new PatchOperation[] {
+                new PatchOperation("replace", "/today", "Edited")
+        });
+
+        this.mockMvc.perform(
+                patch("/v1/reports/4")
+                        .header(HttpHeaders.AUTHORIZATION, auth)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody)
         ).andExpect(status().isForbidden());
     }
 
