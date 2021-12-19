@@ -7,3 +7,5 @@
     ('1:uid-100', 'TEAM_MEMBER', '{"user_id": "uid-100", "roles": ["ADMIN", "PRODUCT_OWNER"]}', '1000-12-12 22:22:22'),
     ('100', 'TEAM', '{"id": 100, "name": "First Local Team"}', '3000-12-12 22:22:22'),
     ('100', 'TEAM', '{"id": 100, "name": "First Expired Team"}', '1000-12-12 22:22:22');
+insert into configurations (team_id, hourly_deadline, timezone) values
+    (2, '22:00', 'Europe/Warsaw');

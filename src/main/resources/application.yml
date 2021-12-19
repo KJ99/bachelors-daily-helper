@@ -38,6 +38,4 @@ in-app-cache:
 api:
   host: ''
   errors:
-    PL.001: ''
-    PL.002: ''
-    PL.003: ''
+    DH.001: ''
