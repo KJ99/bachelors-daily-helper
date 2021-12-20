@@ -1,6 +1,6 @@
 app:
   name: 'Daily Helper'
-  description: D api for Konrad Jezierski's bachelors project
+  description: Daily Helper api for Konrad Jezierski's bachelors project
 server:
   port: 0
 http:

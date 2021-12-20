@@ -1,17 +1,27 @@
 package pl.kj.bachelors.daily.application.controller;
 
 import com.github.fge.jsonpatch.JsonPatch;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pl.kj.bachelors.daily.application.dto.request.PagingQuery;
 import pl.kj.bachelors.daily.application.dto.response.ReportResponse;
+import pl.kj.bachelors.daily.application.dto.response.TeamConfigResponse;
 import pl.kj.bachelors.daily.application.dto.response.UserReportResponse;
 import pl.kj.bachelors.daily.application.dto.response.page.PageResponse;
+import pl.kj.bachelors.daily.application.example.DayPageExample;
 import pl.kj.bachelors.daily.domain.annotation.Authentication;
 import pl.kj.bachelors.daily.domain.exception.AccessDeniedException;
 import pl.kj.bachelors.daily.domain.exception.ResourceNotFoundException;
@@ -40,6 +50,7 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/v1/reports/{teamId}")
 @Authentication
+@Tag(name = "Reports")
 public class ReportApiController extends BaseApiController {
     private final ReportCreateService createService;
     private final ReportUpdateService updateService;
@@ -68,6 +79,18 @@ public class ReportApiController extends BaseApiController {
     }
 
     @PostMapping
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "201",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ReportResponse.class)
+                    )
+            ),
+            @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "403", content = @Content(schema = @Schema(hidden = true)))
+    })
+    @SecurityRequirement(name = "JWT")
     public ResponseEntity<ReportResponse> post(@PathVariable int teamId, @RequestBody ReportCreateModel model)
             throws Exception {
         Team team = this.teamProvider.get(teamId).orElseThrow(ResourceNotFoundException::new);
@@ -88,6 +111,12 @@ public class ReportApiController extends BaseApiController {
     }
 
     @PatchMapping
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "403", content = @Content(schema = @Schema(hidden = true)))
+    })
+    @SecurityRequirement(name = "JWT")
     public ResponseEntity<?> patch(@PathVariable int teamId, @RequestBody JsonPatch patch)
             throws Exception {
         String userId = RequestHolder.getCurrentUserId().orElseThrow(AccessDeniedException::new);
@@ -100,6 +129,18 @@ public class ReportApiController extends BaseApiController {
     }
 
     @GetMapping
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ReportResponse.class)
+                    )
+            ),
+            @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "403", content = @Content(schema = @Schema(hidden = true)))
+    })
+    @SecurityRequirement(name = "JWT")
     public ResponseEntity<ReportResponse> get(@PathVariable int teamId)
             throws AccessDeniedException, ResourceNotFoundException {
         String userId = RequestHolder.getCurrentUserId().orElseThrow(AccessDeniedException::new);
@@ -109,6 +150,18 @@ public class ReportApiController extends BaseApiController {
     }
 
     @GetMapping("/{day}")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            array = @ArraySchema(schema = @Schema(implementation = UserReportResponse.class))
+                    )
+            ),
+            @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "403", content = @Content(schema = @Schema(hidden = true)))
+    })
+    @SecurityRequirement(name = "JWT")
     public ResponseEntity<Collection<UserReportResponse>> getForDay(@PathVariable int teamId, @PathVariable String day)
             throws AccessDeniedException, ResourceNotFoundException {
         Team team = this.teamProvider.get(teamId).orElseThrow(ResourceNotFoundException::new);
@@ -120,6 +173,18 @@ public class ReportApiController extends BaseApiController {
     }
 
     @GetMapping("/archive/days")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = DayPageExample.class)
+                    )
+            ),
+            @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "403", content = @Content(schema = @Schema(hidden = true)))
+    })
+    @SecurityRequirement(name = "JWT")
     public ResponseEntity<PageResponse<String>> getDays(
             @PathVariable int teamId,
             @RequestParam Map<String, String> params) throws AccessDeniedException, ResourceNotFoundException {
@@ -133,6 +198,12 @@ public class ReportApiController extends BaseApiController {
     }
 
     @DeleteMapping
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "403", content = @Content(schema = @Schema(hidden = true)))
+    })
+    @SecurityRequirement(name = "JWT")
     public ResponseEntity<?> delete(@PathVariable int teamId)
             throws ResourceNotFoundException, AccessDeniedException {
         String userId = RequestHolder.getCurrentUserId().orElseThrow(AccessDeniedException::new);
