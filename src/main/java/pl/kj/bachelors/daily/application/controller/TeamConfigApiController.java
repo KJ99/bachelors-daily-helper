@@ -1,8 +1,15 @@
 package pl.kj.bachelors.daily.application.controller;
 
 import com.github.fge.jsonpatch.JsonPatch;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pl.kj.bachelors.daily.application.dto.response.TeamConfigResponse;
@@ -23,6 +30,7 @@ import pl.kj.bachelors.daily.infrastructure.repository.TeamConfigRepository;
 @RestController
 @RequestMapping("/v1/configurations")
 @Authentication
+@Tag(name = "Configurations")
 public class TeamConfigApiController extends BaseApiController {
     private final TeamConfigCreateService createService;
     private final EntityAccessControlService<Team> teamAccessControl;
@@ -45,6 +53,18 @@ public class TeamConfigApiController extends BaseApiController {
     }
 
     @PostMapping
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "201",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = TeamConfigResponse.class)
+                    )
+            ),
+            @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "403", content = @Content(schema = @Schema(hidden = true)))
+    })
+    @SecurityRequirement(name = "JWT")
     public ResponseEntity<TeamConfigResponse> post(@RequestBody TeamConfigCreateModel model) throws Exception {
         Team team = this.teamProvider.get(model.getTeamId()).orElseThrow(ResourceNotFoundException::new);
         this.teamAccessControl.ensureThatUserHasAccess(team, TeamDailyAction.CONFIGURE);
@@ -56,6 +76,12 @@ public class TeamConfigApiController extends BaseApiController {
     }
 
     @PatchMapping("/{teamId}")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "403", content = @Content(schema = @Schema(hidden = true)))
+    })
+    @SecurityRequirement(name = "JWT")
     public ResponseEntity<?> patch(@PathVariable int teamId, @RequestBody JsonPatch patch) throws Exception {
         Team team = this.teamProvider.get(teamId).orElseThrow(ResourceNotFoundException::new);
         this.teamAccessControl.ensureThatUserHasAccess(team, TeamDailyAction.CONFIGURE);
@@ -67,6 +93,18 @@ public class TeamConfigApiController extends BaseApiController {
     }
 
     @GetMapping("/{teamId}")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = TeamConfigResponse.class)
+                    )
+            ),
+            @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "403", content = @Content(schema = @Schema(hidden = true)))
+    })
+    @SecurityRequirement(name = "JWT")
     public ResponseEntity<TeamConfigResponse> get(@PathVariable int teamId)
             throws ResourceNotFoundException, AccessDeniedException {
         Team team = this.teamProvider.get(teamId).orElseThrow(ResourceNotFoundException::new);
@@ -77,6 +115,12 @@ public class TeamConfigApiController extends BaseApiController {
     }
 
     @DeleteMapping("/{teamId}")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "401", content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "403", content = @Content(schema = @Schema(hidden = true)))
+    })
+    @SecurityRequirement(name = "JWT")
     public ResponseEntity<?> delete(@PathVariable int teamId)
             throws ResourceNotFoundException, AccessDeniedException {
         Team team = this.teamProvider.get(teamId).orElseThrow(ResourceNotFoundException::new);

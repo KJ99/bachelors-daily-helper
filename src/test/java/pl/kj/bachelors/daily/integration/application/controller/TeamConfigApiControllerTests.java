@@ -1,4 +1,4 @@
-package pl.kj.bachelors.daily.integration;
+package pl.kj.bachelors.daily.integration.application.controller;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,6 +14,7 @@ import pl.kj.bachelors.daily.domain.model.remote.Team;
 import pl.kj.bachelors.daily.domain.model.remote.TeamMember;
 import pl.kj.bachelors.daily.domain.service.TeamProvider;
 import pl.kj.bachelors.daily.domain.service.user.MemberProvider;
+import pl.kj.bachelors.daily.integration.BaseIntegrationTest;
 import pl.kj.bachelors.daily.model.PatchOperation;
 
 import java.util.List;
