@@ -2,10 +2,16 @@ package pl.kj.bachelors.daily.application.controller;
 
 import com.github.fge.jsonpatch.JsonPatch;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import pl.kj.bachelors.daily.application.dto.request.PagingQuery;
 import pl.kj.bachelors.daily.application.dto.response.ReportResponse;
+import pl.kj.bachelors.daily.application.dto.response.UserReportResponse;
+import pl.kj.bachelors.daily.application.dto.response.page.PageResponse;
 import pl.kj.bachelors.daily.domain.annotation.Authentication;
 import pl.kj.bachelors.daily.domain.exception.AccessDeniedException;
 import pl.kj.bachelors.daily.domain.exception.ResourceNotFoundException;
@@ -15,15 +21,20 @@ import pl.kj.bachelors.daily.domain.model.entity.Report;
 import pl.kj.bachelors.daily.domain.model.extension.action.ReportAction;
 import pl.kj.bachelors.daily.domain.model.extension.action.TeamDailyAction;
 import pl.kj.bachelors.daily.domain.model.remote.Team;
+import pl.kj.bachelors.daily.domain.model.result.ReportWithMemberResult;
 import pl.kj.bachelors.daily.domain.model.update.ReportUpdateModel;
 import pl.kj.bachelors.daily.domain.service.TeamProvider;
 import pl.kj.bachelors.daily.domain.service.crud.create.ReportCreateService;
+import pl.kj.bachelors.daily.domain.service.crud.read.ReportReadService;
 import pl.kj.bachelors.daily.domain.service.crud.update.ReportUpdateService;
 import pl.kj.bachelors.daily.domain.service.security.EntityAccessControlService;
 import pl.kj.bachelors.daily.infrastructure.TimeUtil;
 import pl.kj.bachelors.daily.infrastructure.repository.ReportRepository;
 import pl.kj.bachelors.daily.infrastructure.user.RequestHolder;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -36,6 +47,7 @@ public class ReportApiController extends BaseApiController {
     private final EntityAccessControlService<Team> teamAccessControl;
     private final EntityAccessControlService<Report> reportAccessControl;
     private final ReportRepository repository;
+    private final ReportReadService readService;
 
     @Autowired
     public ReportApiController(
@@ -44,13 +56,15 @@ public class ReportApiController extends BaseApiController {
             TeamProvider teamProvider,
             EntityAccessControlService<Team> teamAccessControl,
             EntityAccessControlService<Report> reportAccessControl,
-            ReportRepository repository) {
+            ReportRepository repository,
+            ReportReadService readService) {
         this.createService = createService;
         this.updateService = updateService;
         this.teamProvider = teamProvider;
         this.teamAccessControl = teamAccessControl;
         this.reportAccessControl = reportAccessControl;
         this.repository = repository;
+        this.readService = readService;
     }
 
     @PostMapping
@@ -92,6 +106,30 @@ public class ReportApiController extends BaseApiController {
         Report report = this.getReport(teamId, userId).orElseThrow(ResourceNotFoundException::new);
 
         return ResponseEntity.ok(this.map(report, ReportResponse.class));
+    }
+
+    @GetMapping("/{day}")
+    public ResponseEntity<Collection<UserReportResponse>> getForDay(@PathVariable int teamId, @PathVariable String day)
+            throws AccessDeniedException, ResourceNotFoundException {
+        Team team = this.teamProvider.get(teamId).orElseThrow(ResourceNotFoundException::new);
+        this.teamAccessControl.ensureThatUserHasAccess(team, TeamDailyAction.READ_REPORTS);
+
+        List<ReportWithMemberResult> results = this.readService.getForTeamAndDay(team, day);
+
+        return ResponseEntity.ok(this.mapCollection(results, UserReportResponse.class));
+    }
+
+    @GetMapping("/archive/days")
+    public ResponseEntity<PageResponse<String>> getDays(
+            @PathVariable int teamId,
+            @RequestParam Map<String, String> params) throws AccessDeniedException, ResourceNotFoundException {
+        Team team = this.teamProvider.get(teamId).orElseThrow(ResourceNotFoundException::new);
+        this.teamAccessControl.ensureThatUserHasAccess(team, TeamDailyAction.READ_REPORTS);
+        PagingQuery query = this.parseQueryParams(params, PagingQuery.class);
+        Pageable pageable = PageRequest.of(query.getPage(), query.getPageSize());
+        Page<String> page = this.repository.findDaysWithReports(team.getId(), pageable);
+
+        return ResponseEntity.ok(this.createPageResponse(page, String.class));
     }
 
     @DeleteMapping

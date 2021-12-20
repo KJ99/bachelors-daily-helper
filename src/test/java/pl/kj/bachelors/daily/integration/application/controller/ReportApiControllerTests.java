@@ -2,6 +2,7 @@ package pl.kj.bachelors.daily.integration.application.controller;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpHeaders;
@@ -11,8 +12,10 @@ import pl.kj.bachelors.daily.domain.model.entity.TeamConfig;
 import pl.kj.bachelors.daily.domain.model.extension.Role;
 import pl.kj.bachelors.daily.domain.model.remote.Team;
 import pl.kj.bachelors.daily.domain.model.remote.TeamMember;
+import pl.kj.bachelors.daily.domain.model.remote.UserProfile;
 import pl.kj.bachelors.daily.domain.service.TeamProvider;
 import pl.kj.bachelors.daily.domain.service.user.MemberProvider;
+import pl.kj.bachelors.daily.domain.service.user.ProfileProvider;
 import pl.kj.bachelors.daily.infrastructure.repository.TeamConfigRepository;
 import pl.kj.bachelors.daily.integration.BaseIntegrationTest;
 import pl.kj.bachelors.daily.model.PatchOperation;
@@ -23,6 +26,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.TimeZone;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -34,6 +38,8 @@ public class ReportApiControllerTests extends BaseIntegrationTest {
     private TeamProvider teamProvider;
     @MockBean
     private MemberProvider memberProvider;
+    @MockBean
+    private ProfileProvider profileProvider;
 
     @BeforeEach
     private void setUp() {
@@ -52,6 +58,14 @@ public class ReportApiControllerTests extends BaseIntegrationTest {
 
         this.createConfig(3, this.getHourInFuture());
         this.createConfig(4, this.getHourInPast());
+
+
+        UserProfile profile = new UserProfile();
+        profile.setId("uid-101");
+        profile.setFirstName("John");
+        profile.setLastName("Doe");
+
+        given(this.profileProvider.get(anyString())).willReturn(Optional.of(profile));
     }
 
     @Test
@@ -160,6 +174,24 @@ public class ReportApiControllerTests extends BaseIntegrationTest {
         String auth = String.format("%s %s", this.jwtConfig.getType(), this.generateValidAccessToken("uid-100"));
         this.mockMvc.perform(
                 get("/v1/reports/3")
+                        .header(HttpHeaders.AUTHORIZATION, auth)
+        ).andExpect(status().isOk());
+    }
+
+    @Test
+    public void testGetForTeam_Ok() throws Exception {
+        String auth = String.format("%s %s", this.jwtConfig.getType(), this.generateValidAccessToken("uid-100"));
+        this.mockMvc.perform(
+                get("/v1/reports/3/2020-01-01")
+                        .header(HttpHeaders.AUTHORIZATION, auth)
+        ).andExpect(status().isOk());
+    }
+
+    @Test
+    public void testGetDays_Ok() throws Exception {
+        String auth = String.format("%s %s", this.jwtConfig.getType(), this.generateValidAccessToken("uid-100"));
+        this.mockMvc.perform(
+                get("/v1/reports/3/archive/days")
                         .header(HttpHeaders.AUTHORIZATION, auth)
         ).andExpect(status().isOk());
     }
