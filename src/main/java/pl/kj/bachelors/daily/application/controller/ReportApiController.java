@@ -12,6 +12,7 @@ import pl.kj.bachelors.daily.domain.exception.ResourceNotFoundException;
 import pl.kj.bachelors.daily.domain.model.create.ReportCreateModel;
 import pl.kj.bachelors.daily.domain.model.embeddable.ReportIdentity;
 import pl.kj.bachelors.daily.domain.model.entity.Report;
+import pl.kj.bachelors.daily.domain.model.extension.action.ReportAction;
 import pl.kj.bachelors.daily.domain.model.extension.action.TeamDailyAction;
 import pl.kj.bachelors.daily.domain.model.remote.Team;
 import pl.kj.bachelors.daily.domain.model.update.ReportUpdateModel;
@@ -23,6 +24,8 @@ import pl.kj.bachelors.daily.infrastructure.TimeUtil;
 import pl.kj.bachelors.daily.infrastructure.repository.ReportRepository;
 import pl.kj.bachelors.daily.infrastructure.user.RequestHolder;
 
+import java.util.Optional;
+
 @RestController
 @RequestMapping("/v1/reports/{teamId}")
 @Authentication
@@ -31,6 +34,7 @@ public class ReportApiController extends BaseApiController {
     private final ReportUpdateService updateService;
     private final TeamProvider teamProvider;
     private final EntityAccessControlService<Team> teamAccessControl;
+    private final EntityAccessControlService<Report> reportAccessControl;
     private final ReportRepository repository;
 
     @Autowired
@@ -39,11 +43,13 @@ public class ReportApiController extends BaseApiController {
             ReportUpdateService updateService,
             TeamProvider teamProvider,
             EntityAccessControlService<Team> teamAccessControl,
+            EntityAccessControlService<Report> reportAccessControl,
             ReportRepository repository) {
         this.createService = createService;
         this.updateService = updateService;
         this.teamProvider = teamProvider;
         this.teamAccessControl = teamAccessControl;
+        this.reportAccessControl = reportAccessControl;
         this.repository = repository;
     }
 
@@ -68,18 +74,43 @@ public class ReportApiController extends BaseApiController {
     }
 
     @PatchMapping
-    public ResponseEntity<?> patch(@PathVariable int teamId, @RequestBody JsonPatch patch) throws Exception {
-        Team team = this.teamProvider.get(teamId).orElseThrow(ResourceNotFoundException::new);
-        this.teamAccessControl.ensureThatUserHasAccess(team, TeamDailyAction.SEND_REPORT);
-        String uid = RequestHolder.getCurrentUserId().orElseThrow(AccessDeniedException::new);
-        ReportIdentity identity = new ReportIdentity();
-        identity.setTeamId(teamId);
-        identity.setUserId(uid);
-        identity.setDay(TimeUtil.getToday());
-        Report report = this.repository.findById(identity).orElseThrow(ResourceNotFoundException::new);
+    public ResponseEntity<?> patch(@PathVariable int teamId, @RequestBody JsonPatch patch)
+            throws Exception {
+        String userId = RequestHolder.getCurrentUserId().orElseThrow(AccessDeniedException::new);
+        Report report = this.getReport(teamId, userId).orElseThrow(ResourceNotFoundException::new);
+        this.reportAccessControl.ensureThatUserHasAccess(report, ReportAction.DELETE);
 
         this.updateService.processUpdate(report, patch, ReportUpdateModel.class);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping
+    public ResponseEntity<ReportResponse> get(@PathVariable int teamId)
+            throws AccessDeniedException, ResourceNotFoundException {
+        String userId = RequestHolder.getCurrentUserId().orElseThrow(AccessDeniedException::new);
+        Report report = this.getReport(teamId, userId).orElseThrow(ResourceNotFoundException::new);
+
+        return ResponseEntity.ok(this.map(report, ReportResponse.class));
+    }
+
+    @DeleteMapping
+    public ResponseEntity<?> delete(@PathVariable int teamId)
+            throws ResourceNotFoundException, AccessDeniedException {
+        String userId = RequestHolder.getCurrentUserId().orElseThrow(AccessDeniedException::new);
+        Report report = this.getReport(teamId, userId).orElseThrow(ResourceNotFoundException::new);
+        this.reportAccessControl.ensureThatUserHasAccess(report, ReportAction.DELETE);
+
+        this.repository.delete(report);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    private Optional<Report> getReport(int teamId, String uid) {
+        ReportIdentity identity = new ReportIdentity();
+        identity.setTeamId(teamId);
+        identity.setUserId(uid);
+        identity.setDay(TimeUtil.getToday());
+        return this.repository.findById(identity);
     }
 }

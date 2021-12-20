@@ -13,4 +13,5 @@ insert into reports (user_id, target_day, team_id, last_time, today, problem) va
     ('uid-100', '2030-01-01', 1, 'Last time', 'Today', 'Problem'),
     ('uid-100', current_date(), 2, 'Last time', 'Today', 'Problem'),
     ('uid-100', current_date(), 3, 'Last time', 'Today', 'Problem'),
+    ('uid-101', '2020-01-01', 3, 'Last time', 'Today', 'Problem'),
     ('uid-100', current_date(), 4, 'Last time', 'Today', 'Problem');

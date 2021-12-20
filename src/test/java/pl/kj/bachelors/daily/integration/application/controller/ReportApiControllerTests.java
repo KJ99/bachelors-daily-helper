@@ -24,8 +24,7 @@ import java.util.Optional;
 import java.util.TimeZone;
 
 import static org.mockito.BDDMockito.given;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 public class ReportApiControllerTests extends BaseIntegrationTest {
@@ -154,6 +153,24 @@ public class ReportApiControllerTests extends BaseIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody)
         ).andExpect(status().isForbidden());
+    }
+
+    @Test
+    public void testGetForMember_Ok() throws Exception {
+        String auth = String.format("%s %s", this.jwtConfig.getType(), this.generateValidAccessToken("uid-100"));
+        this.mockMvc.perform(
+                get("/v1/reports/3")
+                        .header(HttpHeaders.AUTHORIZATION, auth)
+        ).andExpect(status().isOk());
+    }
+
+    @Test
+    public void testDelete_NoContent() throws Exception {
+        String auth = String.format("%s %s", this.jwtConfig.getType(), this.generateValidAccessToken("uid-100"));
+        this.mockMvc.perform(
+                delete("/v1/reports/3")
+                        .header(HttpHeaders.AUTHORIZATION, auth)
+        ).andExpect(status().isNoContent());
     }
 
     private TeamMember getMember(String uid, List<Role> roles) {

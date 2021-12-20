@@ -50,6 +50,7 @@ public class TeamVoter extends BaseEntityVoter<Team, TeamDailyAction> {
                         : AccessVote.DENY;
                 break;
             case READ_CONFIGURATION:
+            case READ_REPORTS:
                 vote = member.isPresent() ? AccessVote.ALLOW : AccessVote.DENY;
                 break;
             default:
