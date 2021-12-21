@@ -38,4 +38,4 @@ in-app-cache:
 api:
   host: ''
   errors:
-    DH.001: ''
+    DH.001: 'This value should be a valid hour in format HH:mm'
